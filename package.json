@@ -1,0 +1,22 @@
+{
+  "name": "invoiz-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Invoiz — Desktop Website (Flutter Web + Laravel API) — Website not app, buyer mode",
+  "scripts": {
+    "start": "php backend/artisan serve --host=127.0.0.1 --port=8000",
+    "dev": "php backend/artisan serve --host=127.0.0.1 --port=8000",
+    "backend": "php backend/artisan serve --host=127.0.0.1 --port=8000",
+    "frontend": "echo \"PHP/Laravel only — no Dart/Flutter. Website at http://127.0.0.1:8000\"",
+    "build": "echo \"No Flutter build needed — PHP/Laravel only\"",
+    "postinstall": "echo \"Invoiz PHP/Laravel only — run npm start or php backend/artisan serve\"",
+    "open-browser": "node -e \"setTimeout(()=>{require('child_process').exec('start http://127.0.0.1:8000'); console.log('Invoiz PHP/Laravel at http://127.0.0.1:8000')},3000)\""
+  },
+  "keywords": ["invoiz", "e-commerce", "desktop", "buyer", "flutter-web", "laravel"],
+  "author": "Invoiz",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "serve": "^14.2.1"
+  }
+}
