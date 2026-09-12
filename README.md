@@ -1,292 +1,141 @@
-# Invoiz — E-Commerce App
+# Invoiz — Desktop Website
 
-A Shopee-style e-commerce application built with:
+A professional desktop e-commerce website built with:
 
-- **Frontend:** Flutter / Dart (`frontend/`)
-- **Backend:** Laravel 13 / PHP (`backend/`)
-- **Database:** MySQL / MariaDB (`invoizdb`)
+- **Frontend:** Laravel Blade templates (`backend/resources/views/`) with **inline CSS** and **vanilla JS** (no Flutter/Dart, no mobile app tools)
+- **Backend:** Laravel 13 / PHP 8.5 (`backend/`)
+- **Database:** MySQL / MariaDB (`invoizdb` — shared between `invoiz` and `Invoiz-main` via XAMPP)
 
-**Roles implemented:** Guest (browse only), Buyer (shop, cart, order, chat), and
-**Buyer + Seller** (one account, two sides — switch between them anytime).
+**Roles:** Guest (browse), Buyer (shop, cart, checkout, orders, chat) — Buyer accounts are **auto-approved** on register (no pending).
 
-> Guests can freely browse products and categories. To add to cart, place
-> orders, chat, or manage an account, a user must **log in first** as an
-> **approved buyer**. New buyer registrations are **pending** until an
-> administrator approves them. A buyer can also **apply to become a seller**
-> from the sidebar; once approved, the same login can act as a buyer or a
-> seller and switch between the two from the sidebar menu.
+> Desktop only — responsive website with sidebar + burger hide, topbar 48px, hero 180px, 5/4/3/2/1 grid, hover `translateY(-4px)`, product color with name, cart badge `1..99+`, COD only.
 
 ---
 
 ## 1. Requirements
 
-| Tool      | Version tested   | Notes |
-|-----------|------------------|-------|
-| PHP       | 8.5 (CLI)        | `php --version` |
-| Composer  | 2.x              | `composer --version` |
-| MySQL     | MariaDB 10.4+    | via XAMPP or standalone |
-| Flutter   | 3.35 / Dart 3.9  | `flutter --version` |
-| Chrome    | any              | for `flutter run -d chrome` |
+| Tool     | Version | Notes |
+|----------|---------|-------|
+| PHP      | 8.5     | `php --version` (OneDrive\Desktop\php\php\php.exe or XAMPP) |
+| Composer | 2.x     | `composer --version` |
+| MySQL    | MariaDB 10.4+ / MySQL 8.0 | XAMPP `mysqld` on 3306, `DB_PASSWORD=""` |
+| Node     | 24.x    | `node --version` for `npm start` (only runs `php artisan serve`) |
 
-Make sure **XAMPP / MySQL is running** (port 3306) and that `php` and
-`composer` are on your `PATH`.
+Make sure **XAMPP MySQL is running** (3306) with `invoizdb` (135 products, 20 categories).
 
 ---
 
-## 2. Project Structure
+## 2. Project Structure (PHP/Laravel only)
 
 ```
-Invoiz/
-├── database/
-│   └── invoizdb.sql          # Full DB schema (single source of truth)
-├── backend/                  # Laravel API
-│   ├── app/Http/Controllers/Api/   # All API controllers
-│   ├── app/Models/                  # Eloquent models
-│   ├── routes/api.php               # API routes
-│   └── .env                         # DB credentials (root / admin)
-├── frontend/                 # Flutter app
-│   ├── lib/
-│   │   ├── main.dart               # App entry
-│   │   ├── config.dart             # API base URL + PSGC address API
-│   │   ├── theme.dart              # Shopee-style theme
-│   │   ├── models/                 # Data models
-│   │   ├── services/               # HTTP + auth services
-│   │   ├── widgets/
-│   │   │   └── main_layout.dart    # SINGLE FILE: navbar + sidebar shell
-│   │   └── screens/                # All pages
-│   └── pubspec.yaml
+Invoiz-main/
+├── backend/                  # Laravel — PHP/Laravel only
+│   ├── app/Http/Controllers/Web/  # HomeController, AuthController (Blade)
+│   ├── app/Http/Controllers/Api/   # API for legacy
+│   ├── app/Models/                # User, Product, Category, Order, Cart
+│   ├── resources/views/
+│   │   ├── layouts/website.blade.php  # Desktop shell: topbar 48 + sidebar 220 + nav 34 + footer (inline CSS)
+│   │   ├── layouts/auth.blade.php     # Auth without sidebar (only form)
+│   │   ├── home.blade.php             # Hero 180 + categories 2-line wrap + grid 5/4/3/2/1 + color with name
+│   │   ├── product.blade.php          # Gallery 420 with object-fit:contain (whole picture visible)
+│   │   ├── cart.blade.php             # Colored thumb + Qty Buy/Remove, Buy All (same store check removed)
+│   │   ├── checkout.blade.php         # COD only
+│   │   ├── orders.blade.php           # My Orders with product picture
+│   │   ├── profile.blade.php          # Full-screen editable
+│   │   ├── auth/login.blade.php / register.blade.php # All required fields + Google button
+│   │   └── chat.blade.php / messages.blade.php / notifications.blade.php
+│   ├── routes/web.php                # Blade: /, /products, /product/{id}, /cart, /checkout, /orders, /profile, /messages
+│   ├── routes/api.php                # API: /api/categories, /api/products, /api/cart, /api/orders/checkout
+│   ├── public/images/logo.png        # INVOIZ ONLINE SHOPPING logo (orange O)
+│   └── storage/app/public/products/  # 50+ product images (exact name)
+│   ├── database/invoizdb.sql
+│   └── .env (DB_DATABASE=invoizdb, DB_USERNAME=root, DB_PASSWORD="")
+├── package.json              # start/dev/serve = php backend/artisan serve --host=127.0.0.1 --port=8000
 └── README.md
 ```
 
-### Single-file navbar/sidebar
-
-`frontend/lib/widgets/main_layout.dart` is the **one shared shell** used by
-every screen. It provides the Shopee-style top bar (search, cart) and the left
-drawer (Home, Favorites, My Cart, My Orders, Messages, Account, Logout). Every
-page simply wraps its content in `MainLayout(child: ...)`.
+**No `frontend/` Flutter/Dart** — removed (`frontend/.dart_tool, android, lib Dart, build` deleted). No mobile app tools.
 
 ---
 
 ## 3. Database Setup
 
-The schema file is `database/invoizdb.sql`. It was **adapted** from the old
-`tinybasketdp.sql`; every change is marked inline with `-- CHANGE:` comments
-(e.g. added `product_variants`, `vouchers`, `order_vouchers`,
-`order_status_histories`, `conversations`, `messages`, `favorites`, renamed
-database to `invoizdb`, and removed the "baby products only" restriction).
-
-Import it (drops & recreates `invoizdb`):
+Both `Desktop\invoiz\backend\.env` and `Invoiz-main\backend\.env` share `invoizdb` via your XAMPP MySQL (`DB_PASSWORD=""`):
 
 ```bash
-mysql -u root -padmin < database/invoizdb.sql
+# XAMPP MySQL must be running (3306)
+mysql -u root -e "SHOW DATABASES;" # should show invoizdb
+# If needed, import (already has 135 products, 20 categories, 3 users)
+mysql -u root < database/invoizdb.sql
 ```
 
-> Default DB credentials used by the app: **user `root` / password `admin`**.
-> If yours differ, update `backend/.env`.
+Default DB: `root` / no password (XAMPP). If `MySQL80` is running on 3306, stop it: `sc stop MySQL80` then start XAMPP `mysqld --defaults-file=C:\xampp\mysql\bin\my.ini`.
 
 ---
 
-## 4. Backend (Laravel API)
+## 4. Backend (Laravel — PHP/Laravel only, Blade inline CSS + vanilla JS)
 
 ```bash
 cd backend
-composer install            # first time only (installs vendor/)
-php artisan storage:link    # link public/storage for uploaded files
-php artisan db:seed         # demo seller, categories, products, vouchers
+composer install
+php artisan storage:link
+php artisan migrate:status # no pending
 php artisan serve --host=127.0.0.1 --port=8000
+# or from root
+npm start  # = php backend/artisan serve
 ```
 
-The API runs at `http://127.0.0.1:8000/api`.
+Website runs at `http://127.0.0.1:8000` — desktop Blade (no Dart).
 
-**Seed data:** 8 generic categories (Fashion, Electronics, Home & Living, etc.),
-8 sample products with color/size variants, a demo seller account, and 3 vouchers
-(`WELCOME10`, `SAVE15`, `FREESHIP`).
+**Categories:** 20 (Appliances 11, Baby Clothes 7, Beauty 12, Books 1, Dresses 11, etc. — Electronic/Gadgets removed, Toys merged, Beauty+Makeup merged to Beauty, Health separate)
 
-**Guest endpoints (no login):** `GET /api/categories`, `GET /api/products`,
-`GET /api/products/{id}`.
+**Products:** 135 with color variant (3 colors) + exact images for 44+ (e.g., `air_purifier.png`, `kettle.png` for Appliances)
 
-**Auth:** `POST /api/register`, `POST /api/login`, `POST /api/logout`,
-`GET /api/me`, `PUT /api/profile`.
+**Auth:** `POST /register` (first_name, last_name, birthday, sex, phone, email, password, address_line) → auto `approved` + `Auth::login` + `Cart` + redirect `/` — `POST /login` (juan@test.com / password123, seller@invoiz.test / password, cmiavenus@gmail.com / password123 Mia). `Continue with Google` button shows message (needs `GOOGLE_CLIENT_ID` + `laravel/socialite`).
 
-**Buyer endpoints (bearer token):** cart (`/api/cart`), addresses
-(`/api/addresses`), vouchers (`/api/vouchers`), orders
-(`/api/orders/checkout`), chat (`/api/conversations`), favorites
-(`/api/favorites`).
-
-**Seller endpoints (bearer token):** `POST /api/seller/apply`,
-`GET /api/seller/status`, `GET /api/seller/me`. The seller application adds a
-`sellers` row to the **same** `users` identity — personal info already lives on
-the buyer account; the application only collects the business details
-(business name, line of business, valid ID, business permit). It is **pending**
-until an administrator approves it.
-
-**Seller flow:**
-1. Log in as an approved buyer → sidebar → **Apply as Seller**.
-2. Fill in business name, line of business (from categories), upload a valid ID
-   and a business permit, submit (status becomes `pending`).
-3. Admin approves (`UPDATE sellers SET approval_status='approved' WHERE user_id=...;`).
-4. Next login shows the **Continue as Buyer / Continue as Seller** picker.
-   The sidebar also gets **Switch to Seller / Switch to Buyer**.
-5. The seller center is currently a placeholder (full store management is
-   built separately).
+**Buyer:** cart `session('cart')` with badge `1..99+` (valid products only, cleaned), `Buy` single → checkout single, `Buy All` any store, `COD` only, orders appear in `My Orders` with picture.
 
 ---
 
-## 5. Frontend (Flutter)
+## 5. Frontend (Blade — inline CSS, vanilla JS)
 
-### 5a. Run in Chrome (web) — easiest
+No Flutter. Blade uses `layouts/website.blade.php` (`:root` `--primary #16697A`, `topbar 48`, `sidebar 220` collapsible via `☰` burger `onclick="sidebar.classList.toggle('collapsed')"` vanilla JS).
 
-```bash
-cd frontend
-flutter pub get
-flutter run -d chrome
-```
-
-> If the API base URL differs, edit `frontend/lib/config.dart`
-> (`AppConfig.apiBaseUrl`). For a physical phone use your LAN IP, e.g.
-> `http://192.168.x.x:8000/api`. Product images resolve against the same
-> host automatically (via `AppConfig.storageUrl`), so they work on devices
-> too — no separate image URL to change.
-
-### 5b. Run on Android
-
-```bash
-cd frontend
-flutter pub get
-flutter run
-```
-
-### 5c. Build a release web bundle
-
-```bash
-cd frontend
-flutter build web --release
-# serve build/web with any static server
-```
+- **Home:** hero `180px` (logo 80px in `Invoiz — Curated for you` + `Welcome Save 15 COD` + `Free COD` below logo), categories `flex-wrap 2-line` (Appliances, Books, Dress, etc.), grid `5/4/3/2/1` responsive + hover lift
+- **Product:** `420px` `object-fit:contain` whole picture visible + `Add to Cart` / `Buy Now` + `Message Seller`
+- **Cart:** empty shows `Your cart is empty` only (no header), with items shows `72×72` color/initial or image + `Qty −/+` + `Buy` on right, `Buy All`
+- **Checkout:** `COD` only (GCash/PayMaya removed)
+- **Orders:** `Order #` with `48×48` product picture + name
+- **Profile:** full-screen editable (click default profile `Mia` beside name → dropdown → `View / Edit Profile`)
+- **Messages:** `Messages` in sidebar → `Invoiz Store` list like Shopee
 
 ---
 
-## 5d. Buyer experience extras
+## 6. Test Accounts
 
-- **Order progress bar** — order detail shows a visual
-  Placed → Confirmed → On the way → Delivered stepper (cancelled orders show a
-  red notice instead).
-- **"X sold" badges** — product cards and detail pages show how many units were
-  actually sold (computed from non-cancelled order items).
-- **Recently Viewed** — a horizontal row on Home with the last products you
-  opened (stored locally; a history icon clears it).
-- **Best-for-you voucher** — in Checkout a highlighted suggestion computes which
-  voucher saves the most for your cart and applies it in one tap.
-- **Notifications inbox** — the bell in the navbar (badge shows unread count)
-  opens a list of order status updates and review acknowledgements
-  (`GET /api/notifications`).
-- **Dark mode** — sidebar toggle at the bottom switches the whole app to a dark
-  palette; your choice is remembered between sessions.
+| Role | E-mail | Password | Status |
+|------|--------|----------|--------|
+| Buyer Mia | `cmiavenus@gmail.com` | `password123` | approved |
+| Buyer Juan | `juan@test.com` | `password123` | approved |
+| Seller | `seller@invoiz.test` | `password` | approved |
 
-### 5e. Seller store page (buyer view)
-
-Every product card shows a **Sold by <Store>** link, and the product page has a
-**Visit Store** button — both open the seller's storefront:
-
-- **Header** — store banner with logo/name, verified badge, and line of business.
-- **Stats row** — Rating, Followers, Products, and total units Sold.
-- **Follow / Following** — tap to follow (or unfollow) the store; follower counts
-  update live (`GET /api/stores/{seller}/follow`).
-- **Products tab** — in-store **search bar + sort** (Newest / Price / Rating).
-- **Reviews tab** — overall store rating with a **5→1 star breakdown bar** and
-  the list of buyer reviews across all of the store's products
-  (`GET /api/stores/{seller}/reviews`).
-- **Chat** — one tap opens a conversation with the seller.
-
-Public store endpoint: `GET /api/stores/{seller}` returns the store profile
-(stats, `is_following` when a buyer is logged in, rating breakdown) plus a
-paginated product list.
-
-### 5f. Product gallery & specifications
-
-- **Image gallery** — the product page shows a **swipeable photo gallery**
-  (up to 3 photos, `product_images` table) with a `1/3` counter, tappable
-  thumbnails, and a **full-screen zoomable viewer** (tap the photo to open).
-  The backend attaches a `gallery` array to `GET /api/products/{id}`.
-- **Specifications** — products now carry rich details rendered in a spec
-  table on the product page: **Brand, Model, SKU, Material, Dimensions,
-  Weight, Warranty, Origin** plus the category. Stored as columns on
-  `products`; seeded for all 8 demo products.
+Register creates approved buyer instantly (no pending).
 
 ---
 
-## 6. App Walkthrough (Guest vs Buyer)
+## 7. Payment
 
-1. **Splash → Login.** Choose **Continue as Guest** to browse, or log in.
-2. **Guest:** can view categories, search, open product details, and see
-   reviews — but tapping *Add to Cart / Buy Now / Favorites* prompts a login.
-3. **Register (Buyer):** Last name, First name, Middle initial, Sex, E-mail,
-   Contact no., Birthday (Age auto-computed), Address via **PSGC API**
-   dropdowns (Province → Municipality → Barangay) + manual street/house,
-   and **Upload ID**. After submitting you must **wait for administrator
-   approval**.
-4. **Login:** only works when `approval_status = approved`. Pending/rejected
-   accounts get a clear message.
-5. **Main menu (navbar + sidebar):**
-   - **Categories** — dropdown/filter chips
-   - **Search** — product list, details, quantity, variations (color/size),
-     Add to Cart
-   - **My Cart** — select items, edit qty, remove → checkout
-   - **Checkout** — choose address, apply **voucher**, **Cash on Delivery**,
-     place order
-   - **My Orders** — tabs (All / To Ship / In Transit / Delivered / Cancelled),
-     order detail with timeline, cancel, and **Rate & Feedback**
-   - **Messages** — start conversations with Invoiz support
-   - **Account** — profile, edit profile, addresses, logout
-   - **Sell** — Apply as Seller (business info + ID + business permit), Seller
-     Center (placeholder), and **Switch to Seller / Switch to Buyer**
+Only **Cash on Delivery (COD)** — checkout shows `Cash on Delivery (COD) — only payment method`.
 
 ---
 
-## 7. Test Accounts
+## 8. Troubleshooting
 
-| Role  | E-mail               | Password    | Status |
-|-------|----------------------|-------------|--------|
-| Seller (demo) | `seller@invoiz.test` | `password` | approved |
-| Buyer (demo)  | `juan@test.com`      | `password123` | approved |
-
-For a **buyer**, register a new account in the app. By default it will be
-`pending`. To approve it quickly for testing:
-
-```bash
-mysql -u root -padmin invoizdb -e "UPDATE users SET approval_status='approved' WHERE email='your@email.com';"
-```
-
-To test the **buyer + seller** flow with the same account, apply as a seller in
-the app (sidebar → Apply as Seller), then approve the seller side:
-
-```bash
-mysql -u root -padmin invoizdb -e "UPDATE sellers SET approval_status='approved' WHERE user_id=<the user id>;"
-```
-
-> In a full system, an admin panel would approve accounts and e-mail the user.
-> Since only Guest + Buyer were requested, approval is done directly in the DB
-> for now (and the pending note is shown in the app).
+- **`Access denied for user 'root'`** — ensure XAMPP `mysqld` on `3306` (not `MySQL80` on `33060`), `DB_PASSWORD=""` in both `.env`.
+- **Port 8000 in use** — `netstat -ano | findstr :8000` + `taskkill /PID`.
+- **Cart badge 2 but empty** — was deleted products in session, fixed to count only valid `Product::whereIn` + clean `session('cart')`.
+- **`npm start` ENOENT** — `package.json` now exists at root, `npm start` = `php artisan serve`.
 
 ---
 
-## 8. Payment
-
-Only **Cash on Delivery (COD)** is implemented, per your request. The
-`payments` table still supports `gcash` / `bank_transfer` enum values for
-future expansion, but the UI only offers COD.
-
----
-
-## 9. Troubleshooting
-
-- **`Access denied for user 'root'`** — fix `backend/.env` DB credentials.
-- **API not reachable from the web app** — confirm the backend is running on
-  port 8000 and `config.dart` points to the right host. CORS is configured to
-  allow all origins for `api/*`.
-- **Uploaded files 404** — run `php artisan storage:link` (or they are stored
-  under `storage/app/private`).
-- **PSGC address dropdowns empty** — needs internet access to
-  `https://psgc.gitlab.io/api`. The rest of the app still works without it.
-- **Port conflicts** — change ports in `backend/.env` (`APP_URL`) and
-  `frontend/lib/config.dart`.
+*No Flutter/Dart, no mobile app tools — pure PHP/Laravel Blade (inline CSS, vanilla JS) desktop website.*
