@@ -48,12 +48,6 @@ function initials($n){ $p=preg_split('/\s+/', trim($n)); if(count($p)>=2) return
         </div>
         <div class="card-body">
           <div style="font-weight:700;font-size:13.5px;color:{{ $c }}">{{ $p->name }}</div>
-          <div class="color-dots">
-            @for($i=0;$i<3;$i++)
-              <span class="dot" style="background:{{ ['#0F766E','#DB2777','#F59E0B','#1D4ED8','#16A34A'][($p->id+$i)%5] }}"></span>
-            @endfor
-            <span style="font-size:10px;color:var(--text-secondary);font-weight:600;margin-left:4px">3 colors</span>
-          </div>
           <div style="color:#0F766E;font-weight:800;font-size:16px;margin-top:6px">₱{{ number_format($p->price,2) }}</div>
           <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">{{ $p->brand }} • {{ $p->stock }} left • COD</div>
         </div>
