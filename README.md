@@ -2,7 +2,7 @@
 
 A Shopee-style e-commerce application built with:
 
-- **Frontend:** Flutter / Dart (`frontend/`)
+- **Frontend:** Blade templates (inline CSS, vanilla JS) (`frontend/`)
 - **Backend:** Laravel 13 / PHP (`backend/`)
 - **Database:** MySQL / MariaDB (`invoizdb`)
 
