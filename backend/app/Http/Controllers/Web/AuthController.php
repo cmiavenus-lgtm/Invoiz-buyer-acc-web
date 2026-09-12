@@ -55,9 +55,14 @@ class AuthController extends Controller {
   public function googleRedirect(){ return redirect('/login')->with('error','Continue with Google needs Google OAuth keys. Set GOOGLE_CLIENT_ID/SECRET in .env and install laravel/socialite.'); }
   public function googleCallback(){ return redirect('/login'); }
   public function logout(Request $r){
+    $cart = $r->session()->get('cart', []);
+    $checkoutSingle = $r->session()->get('checkout_single');
     Auth::logout();
     $r->session()->forget('buyer');
     $r->session()->invalidate(); $r->session()->regenerateToken();
-    return redirect('/')->with('success','Logged out.');
+    // Preserve cart when logging in with another account (user request)
+    if(!empty($cart)) $r->session()->put('cart', $cart);
+    if($checkoutSingle) $r->session()->put('checkout_single', $checkoutSingle);
+    return redirect('/')->with('success','Logged out. Cart preserved.');
   }
 }

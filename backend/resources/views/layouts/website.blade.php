@@ -46,6 +46,8 @@
     .btn{padding:7px 12px;border-radius:999px;border:none;font-weight:700;cursor:pointer;font-size:11px}
     .btn-primary{background:var(--primary);color:#fff}
     .btn-ghost{background:#fff;border:1px solid var(--border)}
+    .cart-wrap{position:relative;display:inline-flex;align-items:center}
+    .badge{position:absolute;top:-6px;right:-8px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--warning);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.12)}
     .footer{padding:12px;background:var(--card);border-top:1px solid var(--border);margin-top:16px;text-align:center;color:var(--text-secondary);font-size:10px}
     /* Responsive */
     @media(max-width:768px){
@@ -68,13 +70,47 @@
 <body>
   <header class="topbar">
     <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('collapsed')" title="Toggle sidebar">☰</button>
-    <div class="brand"><div class="brand-badge">I</div> Invoiz <span style="font-weight:400;color:var(--text-secondary);font-size:11px;margin-left:4px">PHP/Laravel</span></div>
+    <div class="brand"><img src="{{ asset('images/logo.png') }}" alt="Invoiz" style="width:36px;height:36px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);padding:2px" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="brand-badge" style="display:none">I</div> Invoiz <span style="font-weight:400;color:var(--text-secondary);font-size:11px;margin-left:4px">ONLINE SHOPPING</span></div>
     <form method="GET" action="{{ url('/') }}" class="search"><span>⌕</span><input type="text" name="search" value="{{ request('search') }}" placeholder="Search — desktop store"><button type="submit" style="background:var(--primary);color:#fff;border:none;border-radius:999px;padding:5px 10px;cursor:pointer;font-size:12px">Search</button></form>
-    <a href="{{ url('/cart') }}" style="text-decoration:none;color:var(--text-primary);font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM17 18c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7.22 14h9.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 21 5H6.21l-.94-2H1v2h2l3.6 7.59-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7z"/></svg> Cart</a>
+    @php
+      $rawCart = session('cart', []);
+      $validIds = !empty($rawCart) ? \App\Models\Product::whereIn('id', array_keys($rawCart))->pluck('id')->toArray() : [];
+      $validCart = array_intersect_key($rawCart, array_flip($validIds));
+      $cartCount = array_sum($validCart);
+      $cartDisplay = $cartCount > 99 ? '99+' : (string)$cartCount;
+      // Clean invalid ids from session if any
+      if(count($validCart) !== count($rawCart)) session(['cart'=>$validCart]);
+    @endphp
+    <a href="{{ url('/cart') }}" class="cart-wrap" style="text-decoration:none;color:var(--text-primary);font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM17 18c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7.22 14h9.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 21 5H6.21l-.94-2H1v2h2l3.6 7.59-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7z"/></svg> Cart @if($cartCount>0)<span class="badge">{{ $cartDisplay }}</span>@endif</a>
     <a href="{{ url('/orders') }}" style="text-decoration:none;color:var(--text-primary);font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg> Orders</a>
     @if(session('buyer'))
-      <span style="font-weight:700;font-size:13px">{{ session('buyer')['first_name'] }}</span>
-      <a href="{{ url('/logout') }}" style="color:var(--warning);font-weight:700;text-decoration:none;font-size:12px">Logout</a>
+      <div style="position:relative">
+        <button onclick="document.getElementById('profileDrop').classList.toggle('open')" style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:4px 8px 4px 4px;cursor:pointer">
+          <img src="https://ui-avatars.com/api/?name={{ urlencode(session('buyer')['first_name'].' '.session('buyer')['last_name']) }}&background=16697A&color=fff&size=32" alt="Profile" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--border)" onerror="this.src='https://via.placeholder.com/32'">
+          <span style="font-weight:700;font-size:13px">{{ session('buyer')['first_name'] }}</span>
+          <span style="font-size:10px">▼</span>
+        </button>
+        <div id="profileDrop" style="display:none;position:absolute;right:0;top:42px;width:260px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:12px;z-index:30">
+          <div style="display:flex;gap:10px;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            <img src="https://ui-avatars.com/api/?name={{ urlencode(session('buyer')['first_name'].' '.session('buyer')['last_name']) }}&background=16697A&color=fff&size=64" style="width:48px;height:48px;border-radius:50%">
+            <div>
+              <div style="font-weight:800">{{ session('buyer')['first_name'] }} {{ session('buyer')['last_name'] }}</div>
+              <div style="font-size:11px;color:var(--text-secondary)">{{ session('buyer')['email'] }}</div>
+              <div style="font-size:10px;color:var(--success);font-weight:700">● Buyer • Approved</div>
+            </div>
+          </div>
+          <div style="padding:8px 0;font-size:12px;color:var(--text-secondary)">
+            <div><b>ID:</b> {{ session('buyer')['id'] }}</div>
+            <div><b>Email:</b> {{ session('buyer')['email'] }}</div>
+            <div><b>Name:</b> {{ session('buyer')['first_name'] }} {{ session('buyer')['last_name'] }}</div>
+          </div>
+          <a href="{{ url('/profile') }}" style="display:block;padding:8px;background:var(--primary);color:#fff;border-radius:8px;text-align:center;text-decoration:none;font-weight:700;font-size:12px;margin-top:6px">View / Edit Profile (full screen)</a>
+          <a href="{{ url('/orders') }}" style="display:block;padding:8px;background:var(--accent);border-radius:8px;text-align:center;text-decoration:none;color:var(--primary-dark);font-weight:700;font-size:12px;margin-top:6px">My Orders</a>
+          <a href="{{ url('/logout') }}" style="display:block;padding:8px;text-align:center;text-decoration:none;color:var(--warning);font-weight:700;font-size:12px;margin-top:6px">Logout</a>
+        </div>
+      </div>
+      <script>document.addEventListener('click',function(e){var d=document.getElementById('profileDrop'); if(!e.target.closest('button') && d) d.classList.remove('open');});</script>
+      <style>#profileDrop.open{display:block !important}</style>
     @else
       <a href="{{ url('/login') }}" class="btn btn-ghost">Login</a>
       <a href="{{ url('/register') }}" class="btn btn-primary">Register</a>
@@ -83,15 +119,17 @@
   <div class="shell">
     <aside id="sidebar" class="sidebar">
       <h4>Overview</h4>
-      <a class="side-link active" href="{{ url('/') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm10 8h8V11h-8v10zm0-18v6h8V3h-8zM3 21h8v-6H3v6z"/></svg> Home</a>
-      <a class="side-link" href="{{ url('/products') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg> Shop</a>
-      <a class="side-link" href="{{ url('/cart') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM17 18c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7.22 14h9.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 21 5H6.21l-.94-2H1v2h2l3.6 7.59-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7z"/></svg> Basket</a>
+      <a class="side-link {{ request()->is('/') ? 'active' : '' }}" href="{{ url('/') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm10 8h8V11h-8v10zm0-18v6h8V3h-8zM3 21h8v-6H3v6z"/></svg> Home</a>
+      <a class="side-link {{ request()->is('products') || request()->is('products/*') ? 'active' : '' }}" href="{{ url('/products') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg> Shop</a>
+      <a class="side-link {{ request()->is('cart') || request()->is('cart/*') ? 'active' : '' }}" href="{{ url('/cart') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM17 18c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7.22 14h9.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 21 5H6.21l-.94-2H1v2h2l3.6 7.59-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7z"/></svg> Cart @php $rawSc = session('cart', []); $validScIds = !empty($rawSc) ? \App\Models\Product::whereIn('id', array_keys($rawSc))->pluck('id')->toArray() : []; $validSc = array_intersect_key($rawSc, array_flip($validScIds)); $sc = array_sum($validSc); if(count($validSc)!==count($rawSc)) session(['cart'=>$validSc]); if($sc>0) echo '<span style="margin-left:auto;background:var(--warning);color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:999px;min-width:18px;text-align:center">'.($sc>99?'99+':$sc).'</span>'; @endphp</a>
       <h4>Account</h4>
-      <a class="side-link" href="{{ url('/orders') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg> My Orders</a>
-      <a class="side-link" href="{{ url('/login') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.418 0-8 1.79-8 4v2h16v-2c0-2.21-3.582-4-8-4z"/></svg> Login</a>
-      <a class="side-link" href="{{ url('/register') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-7 0c2.21 0 4-1.79 4-4S10.21 6 8 6 4 7.79 4 10s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h8v-2c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2h8v-2c0-2.66-5.33-4-8-4H8z"/></svg> Register</a>
+      <a class="side-link {{ request()->is('orders') ? 'active' : '' }}" href="{{ url('/orders') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg> My Orders</a>
+      <a class="side-link {{ request()->is('login') ? 'active' : '' }}" href="{{ url('/login') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.418 0-8 1.79-8 4v2h16v-2c0-2.21-3.582-4-8-4z"/></svg> Login</a>
+      <a class="side-link {{ request()->is('register') ? 'active' : '' }}" href="{{ url('/register') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-7 0c2.21 0 4-1.79 4-4S10.21 6 8 6 4 7.79 4 10s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h8v-2c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2h8v-2c0-2.66-5.33-4-8-4H8z"/></svg> Register</a>
+      <h4>Notifications</h4>
+      <a class="side-link {{ request()->is('notifications') ? 'active' : '' }}" href="{{ url('/notifications') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-1.29 1.29c-.63.63-.19 1.71.7 1.71h13.17c.9 0 1.34-1.08.71-1.71L18 16z"/></svg> Notifications @php $nc = session('notif_count', 0); if($nc>0) echo '<span style="margin-left:auto;background:var(--warning);color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:999px;min-width:18px;text-align:center">'.($nc>99?'99+':$nc).'</span>'; @endphp</a>
       <h4>Help</h4>
-      <a class="side-link" href="#"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/></svg> Messages</a>
+      <a class="side-link {{ request()->is('messages') || request()->is('chat/*') ? 'active' : '' }}" href="{{ url('/messages') }}"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/></svg> Messages</a>
       <a class="side-link" href="#"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2a1 1 0 0 1 2 0v2a5 5 0 0 0 10 0v-2a1 1 0 1 1 2 0zM12 19a1 1 0 0 1-1-1h2a1 1 0 0 1-1 1z"/></svg> Support</a>
       <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--border);font-size:10px;color:var(--text-secondary);text-align:center">Invoiz v1 • Desktop</div>
     </aside>

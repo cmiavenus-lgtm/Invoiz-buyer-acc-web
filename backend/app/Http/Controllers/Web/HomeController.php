@@ -9,7 +9,7 @@ class HomeController extends Controller {
     $q = Product::with('category')->where('status','active');
     if($request->filled('category')) $q->where('category_id', $request->integer('category'));
     if($request->filled('search')) $q->where('name','like','%'.$request->search.'%');
-    $products = $q->latest()->paginate(20)->withQueryString();
+    $products = $q->latest()->get(); // All products in All for more scroll (143)
     $categories = Category::where('status','active')->orderBy('name')->get();
     return view('home', compact('products','categories'));
   }
