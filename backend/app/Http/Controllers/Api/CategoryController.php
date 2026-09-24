@@ -10,7 +10,7 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $categories = Category::where('status', 'active')
+        $categories = Category::where('active', 1)
             ->withCount('products')
             ->orderBy('name')
             ->get();

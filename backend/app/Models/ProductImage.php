@@ -8,7 +8,7 @@ class ProductImage extends Model
 {
     public const UPDATED_AT = null;
 
-    protected $fillable = ['product_id', 'image_path', 'sort_order'];
+    protected $fillable = ['product_id', 'path', 'is_main'];
 
     public function product()
     {

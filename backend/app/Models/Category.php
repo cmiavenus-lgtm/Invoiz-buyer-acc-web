@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
-    protected $fillable = ['name', 'description', 'image', 'status'];
+    protected $fillable = ['name', 'slug', 'description', 'image', 'active', 'parent_id'];
 
     protected function casts(): array
     {
-        return ['status' => 'string'];
+        return ['active' => 'boolean'];
     }
 
     public function products()

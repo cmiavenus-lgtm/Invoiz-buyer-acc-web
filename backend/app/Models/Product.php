@@ -10,6 +10,8 @@ class Product extends Model
         'seller_id',
         'category_id',
         'name',
+        'slug',
+        'short_description',
         'description',
         'brand',
         'model',
@@ -20,10 +22,13 @@ class Product extends Model
         'warranty',
         'origin',
         'price',
+        'cost_price',
         'stock',
         'image',
         'rating',
         'status',
+        'views_count',
+        'cart_additions',
     ];
 
     protected function casts(): array
@@ -47,19 +52,19 @@ class Product extends Model
 
     public function variants()
     {
-        return $this->hasMany(ProductVariant::class, 'product_id')->where('status', 'active');
+        return $this->hasMany(ProductVariant::class, 'product_id');
     }
 
     public function images()
     {
         return $this->hasMany(ProductImage::class, 'product_id')
-            ->orderBy('sort_order')
+            ->orderBy('is_main', 'desc')
             ->orderBy('id');
     }
 
     public function reviews()
     {
-        return $this->hasMany(Review::class, 'product_id')->where('status', 'visible');
+        return $this->hasMany(Review::class, 'product_id')->where('status', 'approved');
     }
 
     public function favorites()

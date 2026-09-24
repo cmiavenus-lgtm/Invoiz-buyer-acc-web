@@ -8,20 +8,20 @@ class Message extends Model
 {
     public const UPDATED_AT = null;
 
-    protected $fillable = ['conversation_id', 'sender_id', 'body', 'is_read'];
+    protected $fillable = ['sender_id', 'receiver_id', 'body', 'is_read'];
 
     protected function casts(): array
     {
         return ['is_read' => 'boolean'];
     }
 
-    public function conversation()
-    {
-        return $this->belongsTo(Conversation::class, 'conversation_id');
-    }
-
     public function sender()
     {
         return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    public function receiver()
+    {
+        return $this->belongsTo(User::class, 'receiver_id');
     }
 }

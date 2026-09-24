@@ -6,16 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Voucher extends Model
 {
+    protected $table = 'vouchers';
+
     protected $fillable = [
+        'seller_id',
         'code',
-        'name',
-        'description',
-        'discount_type',
-        'discount_value',
+        'type',
+        'value',
         'min_spend',
-        'max_discount',
-        'valid_from',
-        'valid_until',
+        'starts_at',
+        'ends_at',
         'usage_limit',
         'used_count',
         'status',
@@ -24,23 +24,21 @@ class Voucher extends Model
     protected function casts(): array
     {
         return [
-            'discount_type' => 'string',
-            'discount_value' => 'decimal:2',
+            'value' => 'decimal:2',
             'min_spend' => 'decimal:2',
-            'max_discount' => 'decimal:2',
-            'valid_from' => 'date',
-            'valid_until' => 'date',
+            'starts_at' => 'datetime',
+            'ends_at' => 'datetime',
             'usage_limit' => 'integer',
             'used_count' => 'integer',
-            'status' => 'string',
+            'status' => 'boolean',
         ];
     }
 
     public function scopeActive($query)
     {
-        return $query->where('status', 'active')
-            ->where(fn ($q) => $q->whereNull('valid_from')->orWhere('valid_from', '<=', now()->toDateString()))
-            ->where(fn ($q) => $q->whereNull('valid_until')->orWhere('valid_until', '>=', now()->toDateString()))
+        return $query->where('status', 1)
+            ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
             ->where(fn ($q) => $q->whereNull('usage_limit')->orWhereColumn('used_count', '<', 'usage_limit'));
     }
 }

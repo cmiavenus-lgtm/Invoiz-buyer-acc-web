@@ -9,8 +9,10 @@ class HomeController extends Controller {
     $q = Product::with('category')->where('status','active');
     if($request->filled('category')) $q->where('category_id', $request->integer('category'));
     if($request->filled('search')) $q->where('name','like','%'.$request->search.'%');
-    $products = $q->latest()->get(); // All products in All for more scroll (143)
-    $categories = Category::where('status','active')->orderBy('name')->get();
+    $products = $q->orderByRaw("CASE WHEN category_id = (SELECT id FROM categories WHERE name = 'Appliances' LIMIT 1) THEN 0 ELSE 1 END, created_at DESC")->get();
+    $categories = Category::where('active', 1)
+      ->orderByRaw("CASE WHEN name = 'Appliances' THEN 0 ELSE 1 END, name")
+      ->get();
     return view('home', compact('products','categories'));
   }
   public function show($id){

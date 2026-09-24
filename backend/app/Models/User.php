@@ -12,23 +12,16 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'last_name',
-        'first_name',
-        'middle_initial',
-        'sex',
+        'name',
         'email',
         'password',
         'phone',
-        'birthday',
-        'age',
-        'province',
-        'municipality',
-        'barangay',
-        'address_line',
-        'id_image',
-        'approval_status',
         'role',
-        'status',
+        'account_status',
+        'otp',
+        'otp_expires_at',
+        'email_verified_at',
+        'is_admin',
     ];
 
     protected $hidden = [
@@ -41,6 +34,8 @@ class User extends Authenticatable
         return [
             'password' => 'hashed',
             'birthday' => 'date',
+            'otp_expires_at' => 'datetime',
+            'email_verified_at' => 'datetime',
         ];
     }
 

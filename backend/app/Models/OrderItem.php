@@ -16,6 +16,8 @@ class OrderItem extends Model
         'variant_label',
         'quantity',
         'price',
+        'unit_price',
+        'total_price',
     ];
 
     protected function casts(): array
